@@ -1,2 +1,113 @@
-print("Hello World")
-print('HI daddy')
+import os
+import time
+import playsound
+import speech_recognition as sr
+from gtts import gTTS
+import subprocess
+import datetime
+import pyttsx3
+
+from kivy.app import App
+from kivy.uix.label import Label
+from kivy.uix.image import Image, AsyncImage
+from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
+
+
+class MyApp(App):
+    def build(self):
+        self.window = GridLayout()
+        self.window.cols = 1
+        self.window.add_widget(AsyncImage(source='https://i0.wp.com/techunwrapped.com/wp-content/uploads/2021/11/'
+                                                 'Baymax-first-trailer-for-the-Big-Hero-6-spin-off-series.jpg'))
+        self.button = Button(text="click to start")
+        self.window.add_widget(self.button)
+        return self.window
+
+MyApp().run()
+
+
+def speak(text):
+    engine = pyttsx3.init()
+    engine.setProperty('rate', 150)
+    engine.setProperty('volume', 1.0)
+    voices = engine.getProperty('voices')
+    engine.setProperty('voice', voices[0].id)
+    engine.say(text)
+    engine.runAndWait()
+
+
+def get_audio():
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("listening...")
+        audio = r.listen(source)
+        said = ""
+
+        try:
+            said = r.recognize_google(audio)
+            print(said)
+        except Exception as e:
+            print("Exception: " + str(e))
+
+    return said
+
+
+def note(text):
+    date = datetime.datetime.now()
+    file_name = str(date).replace(":", "-") + "-note.txt"
+    with open(file_name, "w") as f:
+        f.write(text)
+    sublime = "C:\Program Files\Sublime Text\sublime_text.exe"
+    subprocess.Popen([sublime, file_name])
+
+
+speak("Hello Shaggy, I am Bae max, your personal healthcare companion.")
+
+text = get_audio().lower()
+
+TIME_STRS = ["time"]
+for phrase in TIME_STRS:
+    if phrase in text:
+        date = datetime.datetime.now().strftime("%I:%M")
+        date_h = datetime.datetime.now().strftime("%H")
+        if date_h >= "12":
+            am_pm = "PM"
+        else:
+            am_pm = "AM"
+        speak(f"Right now it is {date}{am_pm}")
+
+NOTE_STRS = ["make a note", "write this down", "remember this", "type this", "take a note"]
+for phrase in NOTE_STRS:
+    if phrase in text:
+        speak("What would you like me to write down? ")
+        write_down = get_audio().lower()
+        note(write_down)
+        speak("I've made a note of that.")
+
+SICK_STRS = ["not feeling well", "sick", "symptoms", "feel well"]
+COLD_STR = ["headache", "sore throat"]
+ALL_STR = ["itching", "sneezing"]
+
+for phrase in SICK_STRS:
+    if phrase in text:
+        speak("What are your symptoms? ")
+        symptoms = get_audio().lower()
+
+        for phrase in COLD_STR:
+            if phrase in symptoms:
+                speak("You might have a cold")
+        for phrase in ALL_STR:
+            if phrase in symptoms:
+                speak("You might have an allergy")
+
+speak("Are you satisfied with my service?")
+response = get_audio().lower()
+RESPONSE_YES = ["yes", "yeah"]
+RESPONSE_NO = ["no", "nah", "nope"]
+for phrase in RESPONSE_YES:
+    if phrase in response:
+        speak("Thank you, I will see you later. falalala")
+for phrase in RESPONSE_NO:
+    if phrase in response:
+        speak("I hope I can be better next time")
