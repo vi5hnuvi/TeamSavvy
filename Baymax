@@ -1,113 +1,113 @@
+import discord
 import os
+import requests
+import json
+import asyncio
+from discord.ext import commands, tasks
+from datetime import time, datetime
 import time
-import playsound
-import speech_recognition as sr
-from gtts import gTTS
-import subprocess
-import datetime
-import pyttsx3
-
-from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.image import Image, AsyncImage
-from kivy.uix.button import Button
-from kivy.uix.gridlayout import GridLayout
+from datetime import timedelta
+import pytz
+from pytz import timezone
 
 
-class MyApp(App):
-    def build(self):
-        self.window = GridLayout()
-        self.window.cols = 1
-        self.window.add_widget(AsyncImage(source='https://i0.wp.com/techunwrapped.com/wp-content/uploads/2021/11/'
-                                                 'Baymax-first-trailer-for-the-Big-Hero-6-spin-off-series.jpg'))
-        self.button = Button(text="click to start")
-        self.window.add_widget(self.button)
-        return self.window
+#DO NOT ERASE
+# TIME FORMAT CODE: This works perfectly without errors
+EST = timezone('US/Eastern')
+CurrentTime = datetime.now(EST)
+print(CurrentTime)
+Hour = CurrentTime.now(EST).hour
+Min = CurrentTime.now(EST).minute
+Sec = CurrentTime.now(EST).second
+print(f"Hour:", Hour, f",Minutes:", Min, f",Seconds:", Sec)
 
-MyApp().run()
+h = 2
+m = 59
+s = 30
 
+my_secret = os.environ['TOKEN']
+client = discord.Client()
 
-def speak(text):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 150)
-    engine.setProperty('volume', 1.0)
-    voices = engine.getProperty('voices')
-    engine.setProperty('voice', voices[0].id)
-    engine.say(text)
-    engine.runAndWait()
+#Send Scheduled Messages
+def seconds_until_midnight():
+    now = datetime.now()
+    target = (now + timedelta(seconds = 10)).replace(microsecond=0)
+    diff = (target - now).total_seconds()
+    print(f"{target} - {now} = {diff}")
+    return diff
 
+#@tasks.loop(seconds=1)
+#async def called_once_a_day_at_midnight():
+ #   await asyncio.sleep(5)
+  #  message_channel = client.get_channel(957336352544923661)
+   # await message_channel.send("Hello People of Earth")
 
-def get_audio():
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("listening...")
-        audio = r.listen(source)
-        said = ""
-
-        try:
-            said = r.recognize_google(audio)
-            print(said)
-        except Exception as e:
-            print("Exception: " + str(e))
-
-    return said
+#@called_once_a_day_at_midnight.before_loop
+#async def before():
+ #   await client.wait_until_ready()
+  #  print("Finished waiting")
 
 
-def note(text):
-    date = datetime.datetime.now()
-    file_name = str(date).replace(":", "-") + "-note.txt"
-    with open(file_name, "w") as f:
-        f.write(text)
-    sublime = "C:\Program Files\Sublime Text\sublime_text.exe"
-    subprocess.Popen([sublime, file_name])
+
+@client.event
+async def on_ready():
+
+    print("bot:user ready == {0.user}".format(client))
+    channel = client.get_channel(957336352544923661)
+    await channel.send("Hello")
+  
 
 
-speak("Hello Shaggy, I am Bae max, your personal healthcare companion.")
+#Gets random quotes from the website
+def get_quote():
+  response = requests.get("https://zenquotes.io/api/random")
+  json.data = json.loads(response.text)
+  quote = json.data[0]['q'] + " -" + json.data[0]['a']
+  return quote
 
-text = get_audio().lower()
+@client.event
+async def on_ready():
+    print('We have logged in as {0.user}'.format(client))
 
-TIME_STRS = ["time"]
-for phrase in TIME_STRS:
-    if phrase in text:
-        date = datetime.datetime.now().strftime("%I:%M")
-        date_h = datetime.datetime.now().strftime("%H")
-        if date_h >= "12":
-            am_pm = "PM"
-        else:
-            am_pm = "AM"
-        speak(f"Right now it is {date}{am_pm}")
 
-NOTE_STRS = ["make a note", "write this down", "remember this", "type this", "take a note"]
-for phrase in NOTE_STRS:
-    if phrase in text:
-        speak("What would you like me to write down? ")
-        write_down = get_audio().lower()
-        note(write_down)
-        speak("I've made a note of that.")
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+#Respond to message that says Hello 
+    if message.content.startswith("!hello"):
+        await message.channel.send(f"Welcome {message.author}")
+#Respond to message and display inspirational quote
+    if message.content.startswith("!inspire"):
+        quote = get_quote()
+        await message.channel.send(quote)
+#Display the Time
+    if message.content.startswith("!time"):
+      EST = timezone('US/Eastern')
+      EST_time =datetime.now(EST)
+      await message.channel.send(EST_time.strftime("%H:%M:%I"))
+       
+    if message.content.startswith("!a"):
+      await message.channel.send("T-10 seconds")
+      time.sleep(10)
+      await message.channel.send("HELLO EARTHERS")
 
-SICK_STRS = ["not feeling well", "sick", "symptoms", "feel well"]
-COLD_STR = ["headache", "sore throat"]
-ALL_STR = ["itching", "sneezing"]
+    if message.content.startswith("!count"):
+      dt_hour = abs((Hour - h)*3600)
+      dt_minute = abs((Min - m)*60)
+      dt_second = abs((Sec - s))
+      dt_total = dt_hour + dt_minute + dt_second
+      #while dt_total !=
+      await asyncio.sleep(dt_total)
+      await message.channel.send("Time")
 
-for phrase in SICK_STRS:
-    if phrase in text:
-        speak("What are your symptoms? ")
-        symptoms = get_audio().lower()
 
-        for phrase in COLD_STR:
-            if phrase in symptoms:
-                speak("You might have a cold")
-        for phrase in ALL_STR:
-            if phrase in symptoms:
-                speak("You might have an allergy")
 
-speak("Are you satisfied with my service?")
-response = get_audio().lower()
-RESPONSE_YES = ["yes", "yeah"]
-RESPONSE_NO = ["no", "nah", "nope"]
-for phrase in RESPONSE_YES:
-    if phrase in response:
-        speak("Thank you, I will see you later. falalala")
-for phrase in RESPONSE_NO:
-    if phrase in response:
-        speak("I hope I can be better next time")
+    #wait for some time
+    #Send message
+    #wait for time
+    #send message
+
+
+      
+client.run(my_secret)
